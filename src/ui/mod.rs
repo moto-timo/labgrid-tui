@@ -7,7 +7,7 @@ pub mod places;
 pub mod resources;
 
 use ratatui::prelude::*;
-use ratatui::widgets::{Block, Borders, Clear};
+use ratatui::widgets::Clear;
 
 use crate::app::{App, InputMode, View};
 

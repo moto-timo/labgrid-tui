@@ -1,5 +1,5 @@
 use ratatui::prelude::*;
-use ratatui::widgets::{Block, Borders, Row, Table, TableState};
+use ratatui::widgets::{Block, Borders, Cell, Row, Table, TableState};
 
 use crate::app::App;
 

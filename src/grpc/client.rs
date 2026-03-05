@@ -171,10 +171,13 @@ fn convert_map_value(val: &proto::MapValue) -> String {
 }
 
 fn convert_resource_path(path: &proto::resource::Path) -> Option<ResourcePath> {
+    // exporter_name is `optional string` in proto → Option<String>
+    // group_name and resource_name are plain `string` → String
+    let exporter = path.exporter_name.clone()?;
     Some(ResourcePath {
-        exporter: path.exporter_name.clone()?,
-        group: path.group_name.clone()?,
-        name: path.resource_name.clone()?,
+        exporter,
+        group: path.group_name.clone(),
+        name: path.resource_name.clone(),
     })
 }
 
@@ -226,11 +229,13 @@ fn convert_place(place: &proto::Place) -> PlaceInfo {
         .acquired_resources
         .iter()
         .filter_map(|p| {
+            // exporter_name is optional, group_name and resource_name are plain strings
+            let exporter = p.exporter_name.as_deref()?;
             Some(format!(
                 "{}/{}/{}",
-                p.exporter_name.as_deref()?,
-                p.group_name.as_deref()?,
-                p.resource_name.as_deref()?
+                exporter,
+                p.group_name,
+                p.resource_name,
             ))
         })
         .collect();
@@ -239,7 +244,7 @@ fn convert_place(place: &proto::Place) -> PlaceInfo {
         name: place.name.clone(),
         aliases: place.aliases.clone(),
         comment: place.comment.clone(),
-        tags: place.tags.clone(),
+        tags: place.tags.iter().map(|(k, v)| (k.clone(), v.clone())).collect(),
         matches,
         acquired: place.acquired.clone(),
         acquired_resources,

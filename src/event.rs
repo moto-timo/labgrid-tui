@@ -1,6 +1,5 @@
 use std::time::Duration;
 
-use anyhow::Result;
 use crossterm::event::{self, Event as CrosstermEvent, KeyCode, KeyEvent, KeyModifiers};
 use tokio::sync::mpsc;
 
