@@ -1,0 +1,15 @@
+[build-system]
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "labgrid-tui"
+version = "0.1.0"
+description = "A k9s-style terminal UI for labgrid infrastructure monitoring"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+
+[tool.maturin]
+features = ["python"]
+module-name = "labgrid_tui"
+python-source = "python"

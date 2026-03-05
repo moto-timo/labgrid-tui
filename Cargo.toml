@@ -1,0 +1,45 @@
+[package]
+name = "labgrid-tui"
+version = "0.1.0"
+edition = "2021"
+description = "A k9s-style terminal UI for labgrid infrastructure monitoring"
+license = "MIT"
+readme = "README.md"
+
+[lib]
+name = "labgrid_tui"
+path = "src/lib.rs"
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "labgrid-tui"
+path = "src/main.rs"
+
+[dependencies]
+ratatui = "0.29"
+crossterm = "0.28"
+tonic = "0.12"
+prost = "0.13"
+prost-types = "0.13"
+tokio = { version = "1", features = ["full"] }
+tokio-stream = "0.1"
+clap = { version = "4", features = ["derive", "env"] }
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"
+anyhow = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+directories = "6"
+chrono = "0.4"
+
+[dependencies.pyo3]
+version = "0.23"
+features = ["abi3-py38", "extension-module"]
+optional = true
+
+[features]
+default = []
+python = ["pyo3"]
+
+[build-dependencies]
+tonic-build = "0.12"
