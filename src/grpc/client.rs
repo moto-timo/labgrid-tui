@@ -225,20 +225,8 @@ fn convert_place(place: &proto::Place) -> PlaceInfo {
         })
         .collect();
 
-    let acquired_resources = place
-        .acquired_resources
-        .iter()
-        .filter_map(|p| {
-            // exporter_name is optional, group_name and resource_name are plain strings
-            let exporter = p.exporter_name.as_deref()?;
-            Some(format!(
-                "{}/{}/{}",
-                exporter,
-                p.group_name,
-                p.resource_name,
-            ))
-        })
-        .collect();
+    // acquired_resources is `repeated string` in the proto
+    let acquired_resources = place.acquired_resources.clone();
 
     PlaceInfo {
         name: place.name.clone(),
