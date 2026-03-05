@@ -107,17 +107,34 @@ async fn run_app(
     // Spawn terminal event reader
     spawn_terminal_event_reader(event_tx.clone(), tick_rate);
 
-    // Spawn gRPC client
-    let grpc_event_tx = event_tx.clone();
+    // Spawn gRPC client with a bridging channel:
+    // CoordinatorClient sends CoordinatorEvent, we forward as AppEvent::Coordinator
+    let grpc_app_tx = event_tx.clone();
     let grpc_client = CoordinatorClient::new(coordinator_url);
 
     tokio::spawn(async move {
         loop {
-            if let Err(e) = grpc_client.run(grpc_event_tx.clone()).await {
-                let _ = grpc_event_tx.send(AppEvent::Coordinator(
+            let (coord_tx, mut coord_rx) =
+                mpsc::unbounded_channel::<CoordinatorEvent>();
+
+            // Forward coordinator events to the main event channel
+            let fwd_tx = grpc_app_tx.clone();
+            let fwd_handle = tokio::spawn(async move {
+                while let Some(ev) = coord_rx.recv().await {
+                    if fwd_tx.send(AppEvent::Coordinator(ev)).is_err() {
+                        break;
+                    }
+                }
+            });
+
+            if let Err(e) = grpc_client.run(coord_tx).await {
+                let _ = grpc_app_tx.send(AppEvent::Coordinator(
                     CoordinatorEvent::Disconnected(e.to_string()),
                 ));
             }
+
+            fwd_handle.abort();
+
             // Wait before reconnecting
             tokio::time::sleep(Duration::from_secs(5)).await;
             info!("attempting to reconnect to coordinator...");
