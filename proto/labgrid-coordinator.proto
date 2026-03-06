@@ -1,55 +1,61 @@
-// IMPORTANT: This file should be replaced with the official proto from
-// https://github.com/labgrid-project/labgrid/blob/master/labgrid/remote/proto/labgrid-coordinator.proto
-// This is a reconstruction based on the labgrid gRPC protocol specification.
-
 syntax = "proto3";
 
 package labgrid;
 
 service Coordinator {
-  // Bidirectional streaming for clients (monitoring/controlling)
-  rpc ClientStream(stream ClientInMessage) returns (stream ClientOutMessage);
+  rpc ClientStream(stream ClientInMessage) returns (stream ClientOutMessage) {}
 
-  // Bidirectional streaming for exporters (resource providers)
-  rpc ExporterStream(stream ExporterInMessage) returns (stream ExporterOutMessage);
+  rpc ExporterStream(stream ExporterInMessage) returns (stream ExporterOutMessage) {}
 
-  // Place management
-  rpc AddPlace(AddPlaceRequest) returns (AddPlaceResponse);
-  rpc DeletePlace(DeletePlaceRequest) returns (DeletePlaceResponse);
-  rpc GetPlaces(GetPlacesRequest) returns (GetPlacesResponse);
-  rpc AddPlaceAlias(AddPlaceAliasRequest) returns (AddPlaceAliasResponse);
-  rpc DeletePlaceAlias(DeletePlaceAliasRequest) returns (DeletePlaceAliasResponse);
-  rpc SetPlaceTags(SetPlaceTagsRequest) returns (SetPlaceTagsResponse);
-  rpc SetPlaceComment(SetPlaceCommentRequest) returns (SetPlaceCommentResponse);
-  rpc AddPlaceMatch(AddPlaceMatchRequest) returns (AddPlaceMatchResponse);
-  rpc DeletePlaceMatch(DeletePlaceMatchRequest) returns (DeletePlaceMatchResponse);
+  rpc AddPlace(AddPlaceRequest) returns (AddPlaceResponse) {}
 
-  // Resource control
-  rpc AcquirePlace(AcquirePlaceRequest) returns (AcquirePlaceResponse);
-  rpc ReleasePlace(ReleasePlaceRequest) returns (ReleasePlaceResponse);
-  rpc AllowPlace(AllowPlaceRequest) returns (AllowPlaceResponse);
+  rpc DeletePlace(DeletePlaceRequest) returns (DeletePlaceResponse) {}
 
-  // Reservation management
-  rpc CreateReservation(CreateReservationRequest) returns (CreateReservationResponse);
-  rpc CancelReservation(CancelReservationRequest) returns (CancelReservationResponse);
-  rpc PollReservation(PollReservationRequest) returns (PollReservationResponse);
-  rpc GetReservations(GetReservationsRequest) returns (GetReservationsResponse);
+  rpc GetPlaces(GetPlacesRequest) returns (GetPlacesResponse) {}
+
+  rpc AddPlaceAlias(AddPlaceAliasRequest) returns (AddPlaceAliasResponse) {}
+
+  rpc DeletePlaceAlias(DeletePlaceAliasRequest) returns (DeletePlaceAliasResponse) {}
+
+  rpc SetPlaceTags(SetPlaceTagsRequest) returns (SetPlaceTagsResponse) {}
+
+  rpc SetPlaceComment(SetPlaceCommentRequest) returns (SetPlaceCommentResponse) {}
+
+  rpc AddPlaceMatch(AddPlaceMatchRequest) returns (AddPlaceMatchResponse) {}
+
+  rpc DeletePlaceMatch(DeletePlaceMatchRequest) returns (DeletePlaceMatchResponse) {}
+
+  rpc AcquirePlace(AcquirePlaceRequest) returns (AcquirePlaceResponse) {}
+
+  rpc ReleasePlace(ReleasePlaceRequest) returns (ReleasePlaceResponse) {}
+
+  rpc AllowPlace(AllowPlaceRequest) returns (AllowPlaceResponse) {}
+
+  rpc CreateReservation(CreateReservationRequest) returns (CreateReservationResponse) {}
+
+  rpc CancelReservation(CancelReservationRequest) returns (CancelReservationResponse) {}
+
+  rpc PollReservation(PollReservationRequest) returns (PollReservationResponse) {}
+
+  rpc GetReservations(GetReservationsRequest) returns (GetReservationsResponse) {}
 }
 
-// --- Utility messages ---
-
-message Hello {
-  string version = 1;
-}
+message ClientInMessage {
+  oneof kind {
+    Sync sync = 1;
+    StartupDone startup = 2;
+    Subscribe subscribe = 3;
+  };
+};
 
 message Sync {
   uint64 id = 1;
-}
+};
 
 message StartupDone {
   string version = 1;
   string name = 2;
-}
+};
 
 message Subscribe {
   optional bool is_unsubscribe = 1;
@@ -57,9 +63,43 @@ message Subscribe {
     bool all_places = 2;
     bool all_resources = 3;
   }
-}
+};
 
-// --- Map value (variant type for params/extra) ---
+message ClientOutMessage {
+  optional Sync sync = 1;
+  repeated UpdateResponse updates = 2;
+};
+
+message UpdateResponse {
+  oneof kind {
+    Resource resource = 1;
+    Resource.Path del_resource = 2;
+    Place place = 3;
+    string del_place = 4;
+  };
+};
+
+message ExporterInMessage {
+  oneof kind {
+    Resource resource = 1;
+    StartupDone startup = 2;
+    ExporterResponse response = 3;
+  };
+};
+
+message Resource {
+  message Path {
+    optional string exporter_name = 1;
+    string group_name = 2;
+    string resource_name = 3;
+  }
+  Path path = 1;
+  string cls = 2;
+  map<string, MapValue> params = 3;
+  map<string, MapValue> extra = 4;
+  string acquired = 5;
+  bool avail = 6;
+};
 
 message MapValue {
   oneof kind {
@@ -68,34 +108,51 @@ message MapValue {
     uint64 uint_value = 3;
     double float_value = 4;
     string string_value = 5;
+    // FIXME do we need arrays?
   }
+};
+
+message ExporterResponse {
+  bool success = 1;
+  optional string reason = 2;
+};
+
+message Hello {
+  string version = 1;
 }
 
-// --- Resource messages ---
+message ExporterOutMessage {
+  oneof kind {
+    Hello hello = 1;
+    ExporterSetAcquiredRequest set_acquired_request = 2;
+  };
+};
 
-message Resource {
-  message Path {
-    optional string exporter_name = 1;
-    optional string group_name = 2;
-    optional string resource_name = 3;
-  }
+message ExporterSetAcquiredRequest {
+  string group_name = 1;
+  string resource_name = 2;
+  optional string place_name = 3;
+};
 
-  Path path = 1;
-  string cls = 2;
-  map<string, MapValue> params = 3;
-  map<string, MapValue> extra = 4;
-  string acquired = 5;
-  bool avail = 6;
-}
+message AddPlaceRequest {
+  string name = 1;
+};
 
-// --- Place messages ---
+message AddPlaceResponse {
+};
 
-message ResourceMatch {
-  string exporter = 1;
-  string group = 2;
-  string cls = 3;
-  optional string name = 4;
-  optional string rename = 5;
+message DeletePlaceRequest {
+  string name = 1;
+};
+
+message DeletePlaceResponse {
+};
+
+message GetPlacesRequest {
+};
+
+message GetPlacesResponse {
+  repeated Place places = 1;
 }
 
 message Place {
@@ -105,176 +162,136 @@ message Place {
   map<string, string> tags = 4;
   repeated ResourceMatch matches = 5;
   optional string acquired = 6;
-  repeated Resource.Path acquired_resources = 7;
+  repeated string acquired_resources = 7;
   repeated string allowed = 8;
   double created = 9;
   double changed = 10;
   optional string reservation = 11;
-}
+};
 
-// --- Client streaming messages ---
-
-message ClientInMessage {
-  oneof kind {
-    Sync sync = 1;
-    StartupDone startup = 2;
-    Subscribe subscribe = 3;
-  }
-}
-
-message UpdateResponse {
-  oneof kind {
-    Resource resource = 1;
-    Resource.Path del_resource = 2;
-    Place place = 3;
-    string del_place = 4;
-  }
-}
-
-message ClientOutMessage {
-  optional Sync sync = 1;
-  repeated UpdateResponse updates = 2;
-}
-
-// --- Exporter streaming messages ---
-
-message ExporterInMessage {
-  oneof kind {
-    Resource resource = 1;
-    StartupDone startup = 2;
-    ExporterResponse response = 3;
-  }
-}
-
-message ExporterResponse {
-  bool success = 1;
-  optional string reason = 2;
-}
-
-message ExporterSetAcquiredRequest {
-  string group_name = 1;
-  string resource_name = 2;
-  optional string place_name = 3;
-}
-
-message ExporterOutMessage {
-  oneof kind {
-    Hello hello = 1;
-    ExporterSetAcquiredRequest set_acquired = 2;
-  }
-}
-
-// --- Place management requests/responses ---
-
-message AddPlaceRequest {
-  string name = 1;
-}
-message AddPlaceResponse {}
-
-message DeletePlaceRequest {
-  string name = 1;
-}
-message DeletePlaceResponse {}
-
-message GetPlacesRequest {}
-message GetPlacesResponse {
-  repeated Place places = 1;
-}
+message ResourceMatch {
+  string exporter = 1;
+  string group = 2;
+  string cls = 3;
+  optional string name = 4;
+  optional string rename = 5;
+};
 
 message AddPlaceAliasRequest {
   string placename = 1;
   string alias = 2;
-}
-message AddPlaceAliasResponse {}
+};
+
+message AddPlaceAliasResponse {
+};
 
 message DeletePlaceAliasRequest {
   string placename = 1;
   string alias = 2;
-}
-message DeletePlaceAliasResponse {}
+};
+
+message DeletePlaceAliasResponse {
+};
 
 message SetPlaceTagsRequest {
   string placename = 1;
   map<string, string> tags = 2;
-}
-message SetPlaceTagsResponse {}
+};
+
+message SetPlaceTagsResponse {
+};
 
 message SetPlaceCommentRequest {
   string placename = 1;
   string comment = 2;
-}
-message SetPlaceCommentResponse {}
+};
+
+message SetPlaceCommentResponse {
+};
 
 message AddPlaceMatchRequest {
   string placename = 1;
   string pattern = 2;
   optional string rename = 3;
-}
-message AddPlaceMatchResponse {}
+};
+
+message AddPlaceMatchResponse {
+};
 
 message DeletePlaceMatchRequest {
   string placename = 1;
   string pattern = 2;
   optional string rename = 3;
-}
-message DeletePlaceMatchResponse {}
+};
 
-// --- Resource control requests/responses ---
+message DeletePlaceMatchResponse {
+};
 
 message AcquirePlaceRequest {
   string placename = 1;
-}
-message AcquirePlaceResponse {}
+};
+
+message AcquirePlaceResponse {
+};
 
 message ReleasePlaceRequest {
   string placename = 1;
-}
-message ReleasePlaceResponse {}
+  optional string fromuser = 2;
+};
+
+message ReleasePlaceResponse {
+};
 
 message AllowPlaceRequest {
   string placename = 1;
   string user = 2;
-}
-message AllowPlaceResponse {}
+};
 
-// --- Reservation requests/responses ---
+message AllowPlaceResponse {
+};
+
+
+message CreateReservationRequest {
+  map<string, Reservation.Filter> filters = 1;
+  double prio = 2;
+};
+
+message CreateReservationResponse {
+  Reservation reservation = 1;
+};
 
 message Reservation {
   message Filter {
     map<string, string> filter = 1;
   }
-
   string owner = 1;
   string token = 2;
   int32 state = 3;
-  double prio = 4;
+  double prio  = 4;
   map<string, Filter> filters = 5;
-  map<string, Filter> allocations = 6;
+  map<string, string> allocations = 6;
   double created = 7;
   double timeout = 8;
-}
-
-message CreateReservationRequest {
-  map<string, Reservation.Filter> filters = 1;
-  double prio = 2;
-}
-message CreateReservationResponse {
-  Reservation reservation = 1;
-}
+};
 
 message CancelReservationRequest {
   string token = 1;
-}
-message CancelReservationResponse {}
+};
+
+message CancelReservationResponse {
+};
 
 message PollReservationRequest {
   string token = 1;
-}
+};
+
 message PollReservationResponse {
   Reservation reservation = 1;
-}
+};
 
-message GetReservationsRequest {}
 message GetReservationsResponse {
   repeated Reservation reservations = 1;
-}
+};
+
+message GetReservationsRequest {
+};
