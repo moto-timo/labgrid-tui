@@ -44,10 +44,18 @@ impl CoordinatorClient {
             .connect_timeout(std::time::Duration::from_secs(10))
             .timeout(std::time::Duration::from_secs(30));
 
-        let channel = endpoint.connect().await.context(format!(
-            "failed to connect to coordinator at {}",
-            self.url
-        ))?;
+        let channel = match endpoint.connect().await {
+            Ok(ch) => {
+                info!("TCP connection established");
+                ch
+            }
+            Err(e) => {
+                error!(error = ?e, "TCP connect failed");
+                return Err(e).with_context(|| {
+                    format!("failed to connect to coordinator at {}", self.url)
+                });
+            }
+        };
 
         let mut client = TonicClient::new(channel);
 
@@ -56,10 +64,18 @@ impl CoordinatorClient {
         let out_stream = ReceiverStream::new(out_rx);
 
         // Open bidirectional stream
-        let response = client
-            .client_stream(out_stream)
-            .await
-            .context("failed to open client stream")?;
+        let response = match client.client_stream(out_stream).await {
+            Ok(r) => {
+                info!("gRPC ClientStream opened");
+                r
+            }
+            Err(e) => {
+                error!(error = ?e, "gRPC ClientStream failed");
+                return Err(e).with_context(|| {
+                    format!("failed to open ClientStream on {}", self.url)
+                });
+            }
+        };
 
         let mut in_stream = response.into_inner();
 

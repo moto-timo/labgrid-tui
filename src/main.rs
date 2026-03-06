@@ -128,7 +128,7 @@ async fn run_app(
             });
 
             if let Err(e) = grpc_client.run(coord_tx).await {
-                error!(error = %e, "coordinator connection failed");
+                error!(error = ?e, "coordinator connection failed");
                 let _ = grpc_app_tx.send(AppEvent::Coordinator(
                     CoordinatorEvent::Disconnected(format!("{e:#}")),
                 ));
