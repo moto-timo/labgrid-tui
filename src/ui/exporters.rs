@@ -1,7 +1,6 @@
 use ratatui::prelude::*;
 use ratatui::widgets::{Block, Borders, Cell, Row, Table, TableState};
 
-use super::theme;
 use crate::app::App;
 
 pub fn render(frame: &mut Frame, app: &App, area: Rect) {
@@ -10,7 +9,11 @@ pub fn render(frame: &mut Frame, app: &App, area: Rect) {
     let header = Row::new(vec![
         "EXPORTER", "RESOURCES", "AVAILABLE", "UNAVAILABLE", "ACQUIRED", "CLASSES",
     ])
-    .style(theme::header_style())
+    .style(
+        Style::default()
+            .fg(Color::Yellow)
+            .add_modifier(Modifier::BOLD),
+    )
     .bottom_margin(1);
 
     let rows: Vec<Row> = exporters
@@ -20,24 +23,23 @@ pub fn render(frame: &mut Frame, app: &App, area: Rect) {
                 Cell::from(exp.name.clone()),
                 Cell::from(exp.total_resources.to_string()),
                 Cell::from(exp.available.to_string())
-                    .style(theme::avail_style()),
+                    .style(Style::default().fg(Color::Green)),
                 Cell::from(exp.unavailable.to_string()).style(
                     if exp.unavailable > 0 {
-                        theme::unavail_style()
+                        Style::default().fg(Color::Red)
                     } else {
-                        theme::row_style()
+                        Style::default()
                     },
                 ),
                 Cell::from(exp.acquired.to_string()).style(
                     if exp.acquired > 0 {
-                        theme::acquired_style()
+                        Style::default().fg(Color::Cyan)
                     } else {
-                        theme::row_style()
+                        Style::default()
                     },
                 ),
                 Cell::from(exp.classes_display()),
             ])
-            .style(theme::row_style())
         })
         .collect();
 
@@ -49,23 +51,26 @@ pub fn render(frame: &mut Frame, app: &App, area: Rect) {
     let table = Table::new(
         rows,
         [
-            Constraint::Min(15),
-            Constraint::Length(10),
-            Constraint::Length(10),
-            Constraint::Length(12),
-            Constraint::Length(10),
-            Constraint::Percentage(25),
+            Constraint::Min(15),        // EXPORTER
+            Constraint::Length(10),      // RESOURCES
+            Constraint::Length(10),      // AVAILABLE
+            Constraint::Length(12),      // UNAVAILABLE
+            Constraint::Length(10),      // ACQUIRED
+            Constraint::Percentage(25), // CLASSES
         ],
     )
     .header(header)
     .block(
         Block::default()
             .title(format!(" Exporters{filter_note} "))
-            .borders(Borders::ALL)
-            .border_style(theme::border_style()),
+            .borders(Borders::ALL),
     )
-    .row_highlight_style(theme::row_highlight_style())
-    .highlight_symbol(theme::HIGHLIGHT_SYMBOL);
+    .row_highlight_style(
+        Style::default()
+            .bg(Color::DarkGray)
+            .add_modifier(Modifier::BOLD),
+    )
+    .highlight_symbol("▶ ");
 
     let mut state = TableState::default();
     if !exporters.is_empty() {

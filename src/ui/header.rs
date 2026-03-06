@@ -1,7 +1,6 @@
 use ratatui::prelude::*;
 use ratatui::widgets::{Block, Borders, Tabs};
 
-use super::theme;
 use crate::app::{App, View};
 
 pub fn render(frame: &mut Frame, app: &App, area: Rect) {
@@ -15,6 +14,7 @@ pub fn render(frame: &mut Frame, app: &App, area: Rect) {
                 View::Places => app.places.len(),
                 View::Resources => app.resources.len(),
                 View::Exporters => {
+                    // count unique exporters
                     app.resources
                         .values()
                         .map(|r| &r.path.exporter)
@@ -32,23 +32,26 @@ pub fn render(frame: &mut Frame, app: &App, area: Rect) {
         format!(" ○ {}", app.coordinator_url)
     };
 
-    let border = if app.connected {
-        theme::border_connected()
-    } else {
-        theme::border_disconnected()
-    };
-
     let block = Block::default()
         .title(connection_status)
         .title_alignment(Alignment::Right)
         .borders(Borders::ALL)
-        .border_style(border);
+        .border_style(Style::default().fg(if app.connected {
+            Color::Green
+        } else {
+            Color::Red
+        }));
 
     let tabs = Tabs::new(titles)
         .block(block)
         .select(app.view.index())
-        .style(theme::tab_inactive())
-        .highlight_style(theme::tab_active())
+        .style(Style::default().fg(Color::DarkGray))
+        .highlight_style(
+            Style::default()
+                .fg(Color::White)
+                .bg(Color::DarkGray)
+                .add_modifier(Modifier::BOLD),
+        )
         .divider("|");
 
     frame.render_widget(tabs, area);

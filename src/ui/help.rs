@@ -1,14 +1,15 @@
 use ratatui::prelude::*;
 use ratatui::widgets::{Block, Borders, Paragraph, Wrap};
 
-use super::theme;
 use crate::app::App;
 
 pub fn render(frame: &mut Frame, _app: &App, area: Rect) {
     let help_text = vec![
         Line::from(Span::styled(
             "labgrid-tui Keybindings",
-            theme::section_header(),
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
         )),
         Line::from(""),
         section("Navigation"),
@@ -44,7 +45,7 @@ pub fn render(frame: &mut Frame, _app: &App, area: Rect) {
     let block = Block::default()
         .title(" Help ")
         .borders(Borders::ALL)
-        .border_style(theme::panel_border());
+        .border_style(Style::default().fg(Color::Yellow));
 
     let paragraph = Paragraph::new(help_text)
         .block(block)
@@ -56,13 +57,18 @@ pub fn render(frame: &mut Frame, _app: &App, area: Rect) {
 fn section(title: &str) -> Line<'static> {
     Line::from(Span::styled(
         title.to_string(),
-        theme::section_header(),
+        Style::default()
+            .fg(Color::Yellow)
+            .add_modifier(Modifier::BOLD),
     ))
 }
 
 fn binding(key: &str, desc: &str) -> Line<'static> {
     Line::from(vec![
-        Span::styled(format!("  {key:<16}"), theme::help_key()),
-        Span::styled(desc.to_string(), theme::help_desc()),
+        Span::styled(
+            format!("  {key:<16}"),
+            Style::default().fg(Color::Green),
+        ),
+        Span::raw(desc.to_string()),
     ])
 }
