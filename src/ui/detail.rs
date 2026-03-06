@@ -1,6 +1,7 @@
 use ratatui::prelude::*;
 use ratatui::widgets::{Block, Borders, Paragraph, Wrap};
 
+use super::theme;
 use crate::app::{App, View};
 
 pub fn render(frame: &mut Frame, app: &App, area: Rect) {
@@ -13,7 +14,7 @@ pub fn render(frame: &mut Frame, app: &App, area: Rect) {
     let block = Block::default()
         .title(format!(" {title} "))
         .borders(Borders::ALL)
-        .border_style(Style::default().fg(Color::Cyan));
+        .border_style(theme::panel_border());
 
     let paragraph = Paragraph::new(content)
         .block(block)
@@ -51,13 +52,13 @@ fn render_place_detail(app: &App) -> (String, Vec<Line<'static>>) {
 
     lines.push(section_header("Tags"));
     if place.tags.is_empty() {
-        lines.push(Line::from("  (none)"));
+        lines.push(dim_line("  (none)"));
     } else {
         for (k, v) in &place.tags {
             if v.is_empty() {
-                lines.push(Line::from(format!("  {k}")));
+                lines.push(body_line(&format!("  {k}")));
             } else {
-                lines.push(Line::from(format!("  {k} = {v}")));
+                lines.push(body_line(&format!("  {k} = {v}")));
             }
         }
     }
@@ -65,30 +66,30 @@ fn render_place_detail(app: &App) -> (String, Vec<Line<'static>>) {
 
     lines.push(section_header("Matches"));
     if place.matches.is_empty() {
-        lines.push(Line::from("  (none)"));
+        lines.push(dim_line("  (none)"));
     } else {
         for m in &place.matches {
-            lines.push(Line::from(format!("  {}", m.pattern_display())));
+            lines.push(body_line(&format!("  {}", m.pattern_display())));
         }
     }
     lines.push(Line::from(""));
 
     lines.push(section_header("Acquired Resources"));
     if place.acquired_resources.is_empty() {
-        lines.push(Line::from("  (none)"));
+        lines.push(dim_line("  (none)"));
     } else {
         for r in &place.acquired_resources {
-            lines.push(Line::from(format!("  {r}")));
+            lines.push(body_line(&format!("  {r}")));
         }
     }
     lines.push(Line::from(""));
 
     lines.push(section_header("Allowed"));
     if place.allowed.is_empty() {
-        lines.push(Line::from("  (none)"));
+        lines.push(dim_line("  (none)"));
     } else {
         for a in &place.allowed {
-            lines.push(Line::from(format!("  {a}")));
+            lines.push(body_line(&format!("  {a}")));
         }
     }
 
@@ -118,20 +119,20 @@ fn render_resource_detail(app: &App) -> (String, Vec<Line<'static>>) {
 
     lines.push(section_header("Parameters"));
     if res.params.is_empty() {
-        lines.push(Line::from("  (none)"));
+        lines.push(dim_line("  (none)"));
     } else {
         for (k, v) in &res.params {
-            lines.push(Line::from(format!("  {k} = {v}")));
+            lines.push(body_line(&format!("  {k} = {v}")));
         }
     }
     lines.push(Line::from(""));
 
     lines.push(section_header("Extra"));
     if res.extra.is_empty() {
-        lines.push(Line::from("  (none)"));
+        lines.push(dim_line("  (none)"));
     } else {
         for (k, v) in &res.extra {
-            lines.push(Line::from(format!("  {k} = {v}")));
+            lines.push(body_line(&format!("  {k} = {v}")));
         }
     }
 
@@ -157,11 +158,10 @@ fn render_exporter_detail(app: &App) -> (String, Vec<Line<'static>>) {
 
     lines.push(section_header("Resource Classes"));
     for cls in &exp.resource_classes {
-        lines.push(Line::from(format!("  {cls}")));
+        lines.push(body_line(&format!("  {cls}")));
     }
     lines.push(Line::from(""));
 
-    // List individual resources for this exporter
     lines.push(section_header("Resources"));
     let mut resources: Vec<_> = app
         .resources
@@ -176,7 +176,7 @@ fn render_exporter_detail(app: &App) -> (String, Vec<Line<'static>>) {
             Some(a) if !a.is_empty() => format!(" [{a}]"),
             _ => String::new(),
         };
-        lines.push(Line::from(format!(
+        lines.push(body_line(&format!(
             "  {status} {}/{} ({}){acquired}",
             res.path.group, res.path.name, res.cls
         )));
@@ -187,21 +187,25 @@ fn render_exporter_detail(app: &App) -> (String, Vec<Line<'static>>) {
 
 fn field_line(label: &str, value: &str) -> Line<'static> {
     Line::from(vec![
-        Span::styled(
-            format!("{label}: "),
-            Style::default()
-                .fg(Color::Yellow)
-                .add_modifier(Modifier::BOLD),
-        ),
-        Span::raw(value.to_string()),
+        Span::styled(format!("{label}: "), theme::field_label()),
+        Span::styled(value.to_string(), theme::field_value()),
     ])
 }
 
 fn section_header(title: &str) -> Line<'static> {
     Line::from(Span::styled(
         format!("── {title} ──"),
-        Style::default()
-            .fg(Color::Cyan)
-            .add_modifier(Modifier::BOLD),
+        theme::section_header(),
+    ))
+}
+
+fn body_line(text: &str) -> Line<'static> {
+    Line::from(Span::styled(text.to_string(), theme::field_value()))
+}
+
+fn dim_line(text: &str) -> Line<'static> {
+    Line::from(Span::styled(
+        text.to_string(),
+        Style::default().fg(theme::GREEN_FAINT),
     ))
 }

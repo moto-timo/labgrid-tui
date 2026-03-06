@@ -1,6 +1,7 @@
 use ratatui::prelude::*;
 use ratatui::widgets::Paragraph;
 
+use super::theme;
 use crate::app::App;
 
 /// Render the status bar (normal mode).
@@ -18,9 +19,9 @@ pub fn render_status(frame: &mut Frame, app: &App, area: Rect) {
     );
 
     let style = if app.connected {
-        Style::default().fg(Color::White).bg(Color::DarkGray)
+        theme::status_bar()
     } else {
-        Style::default().fg(Color::White).bg(Color::Red)
+        theme::status_bar_disconnected()
     };
 
     let paragraph = Paragraph::new(text).style(style);
@@ -30,14 +31,9 @@ pub fn render_status(frame: &mut Frame, app: &App, area: Rect) {
 /// Render the filter input bar.
 pub fn render_filter(frame: &mut Frame, app: &App, area: Rect) {
     let text = format!("/{}", app.input_buffer);
-    let paragraph = Paragraph::new(text).style(
-        Style::default()
-            .fg(Color::White)
-            .bg(Color::Blue),
-    );
+    let paragraph = Paragraph::new(text).style(theme::filter_bar());
     frame.render_widget(paragraph, area);
 
-    // Position cursor
     frame.set_cursor_position((
         area.x + 1 + app.input_buffer.len() as u16,
         area.y,
@@ -47,14 +43,9 @@ pub fn render_filter(frame: &mut Frame, app: &App, area: Rect) {
 /// Render the command input bar.
 pub fn render_command(frame: &mut Frame, app: &App, area: Rect) {
     let text = format!(":{}", app.input_buffer);
-    let paragraph = Paragraph::new(text).style(
-        Style::default()
-            .fg(Color::White)
-            .bg(Color::Magenta),
-    );
+    let paragraph = Paragraph::new(text).style(theme::command_bar());
     frame.render_widget(paragraph, area);
 
-    // Position cursor
     frame.set_cursor_position((
         area.x + 1 + app.input_buffer.len() as u16,
         area.y,

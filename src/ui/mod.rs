@@ -5,6 +5,7 @@ pub mod header;
 pub mod help;
 pub mod places;
 pub mod resources;
+pub mod theme;
 
 use ratatui::prelude::*;
 use ratatui::widgets::Clear;

@@ -1,6 +1,7 @@
 use ratatui::prelude::*;
 use ratatui::widgets::{Block, Borders, Cell, Row, Table, TableState};
 
+use super::theme;
 use crate::app::App;
 
 pub fn render(frame: &mut Frame, app: &App, area: Rect) {
@@ -9,11 +10,7 @@ pub fn render(frame: &mut Frame, app: &App, area: Rect) {
     let header = Row::new(vec![
         "EXPORTER", "GROUP", "NAME", "CLASS", "AVAIL", "ACQUIRED",
     ])
-    .style(
-        Style::default()
-            .fg(Color::Yellow)
-            .add_modifier(Modifier::BOLD),
-    )
+    .style(theme::header_style())
     .bottom_margin(1);
 
     let rows: Vec<Row> = paths
@@ -21,24 +18,27 @@ pub fn render(frame: &mut Frame, app: &App, area: Rect) {
         .filter_map(|path| {
             let res = app.resources.get(path)?;
             let avail_style = if res.available {
-                Style::default().fg(Color::Green)
+                theme::avail_style()
             } else {
-                Style::default().fg(Color::Red)
+                theme::unavail_style()
             };
-            let acquired_style = if res.acquired.is_some() {
-                Style::default().fg(Color::Cyan)
+            let acq_style = if res.acquired.is_some() {
+                theme::acquired_style()
             } else {
-                Style::default()
+                theme::row_style()
             };
 
-            Some(Row::new(vec![
-                Cell::from(res.path.exporter.clone()),
-                Cell::from(res.path.group.clone()),
-                Cell::from(res.path.name.clone()),
-                Cell::from(res.cls.clone()),
-                Cell::from(res.avail_display().to_string()).style(avail_style),
-                Cell::from(res.acquired_display().to_string()).style(acquired_style),
-            ]))
+            Some(
+                Row::new(vec![
+                    Cell::from(res.path.exporter.clone()),
+                    Cell::from(res.path.group.clone()),
+                    Cell::from(res.path.name.clone()),
+                    Cell::from(res.cls.clone()),
+                    Cell::from(res.avail_display().to_string()).style(avail_style),
+                    Cell::from(res.acquired_display().to_string()).style(acq_style),
+                ])
+                .style(theme::row_style()),
+            )
         })
         .collect();
 
@@ -50,26 +50,23 @@ pub fn render(frame: &mut Frame, app: &App, area: Rect) {
     let table = Table::new(
         rows,
         [
-            Constraint::Min(12),        // EXPORTER
-            Constraint::Min(10),        // GROUP
-            Constraint::Min(15),        // NAME
-            Constraint::Min(15),        // CLASS
-            Constraint::Length(7),      // AVAIL
-            Constraint::Percentage(15), // ACQUIRED
+            Constraint::Min(12),
+            Constraint::Min(10),
+            Constraint::Min(15),
+            Constraint::Min(15),
+            Constraint::Length(7),
+            Constraint::Percentage(15),
         ],
     )
     .header(header)
     .block(
         Block::default()
             .title(format!(" Resources{filter_note} "))
-            .borders(Borders::ALL),
+            .borders(Borders::ALL)
+            .border_style(theme::border_style()),
     )
-    .row_highlight_style(
-        Style::default()
-            .bg(Color::DarkGray)
-            .add_modifier(Modifier::BOLD),
-    )
-    .highlight_symbol("▶ ");
+    .row_highlight_style(theme::row_highlight_style())
+    .highlight_symbol(theme::HIGHLIGHT_SYMBOL);
 
     let mut state = TableState::default();
     if !paths.is_empty() {
