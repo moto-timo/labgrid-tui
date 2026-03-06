@@ -7,7 +7,7 @@ use std::path::PathBuf;
 #[derive(Parser, Debug)]
 #[command(name = "labgrid-tui", version, about)]
 pub struct Cli {
-    /// Coordinator gRPC URL (e.g., http://coordinator:20408)
+    /// Coordinator URL (e.g., ws://coordinator:20408/ws or just host:port)
     #[arg(short, long, env = "LG_COORDINATOR")]
     pub coordinator: Option<String>,
 
@@ -73,9 +73,30 @@ impl Config {
 }
 
 /// Resolve the final coordinator URL from CLI args, config file, and environment.
+///
+/// Normalizes the coordinator URL:
+/// - `http://host:port` or `https://...` → used as-is (plain HTTP/2 gRPC)
+/// - `ws://host:port/ws` or `wss://...` → used as-is (WebSocket transport)
+/// - `host:port` (no scheme) → converted to `http://host:port`
 pub fn resolve_coordinator_url(cli: &Cli, config: &Config) -> Option<String> {
     // CLI flag takes priority, then config file, then env (handled by clap)
-    cli.coordinator
+    let raw = cli
+        .coordinator
         .clone()
-        .or_else(|| config.coordinator.url.clone())
+        .or_else(|| config.coordinator.url.clone())?;
+
+    Some(normalize_coordinator_url(&raw))
+}
+
+fn normalize_coordinator_url(raw: &str) -> String {
+    if raw.starts_with("http://")
+        || raw.starts_with("https://")
+        || raw.starts_with("ws://")
+        || raw.starts_with("wss://")
+    {
+        raw.to_string()
+    } else {
+        // Bare host:port → default to plain HTTP/2 gRPC
+        format!("http://{}", raw)
+    }
 }
