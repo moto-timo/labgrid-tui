@@ -17,7 +17,7 @@ use crossterm::{
 };
 use ratatui::prelude::*;
 use tokio::sync::mpsc;
-use tracing::info;
+use tracing::{error, info};
 
 use app::App;
 use config::{Cli, Config};
@@ -128,8 +128,9 @@ async fn run_app(
             });
 
             if let Err(e) = grpc_client.run(coord_tx).await {
+                error!(error = %e, "coordinator connection failed");
                 let _ = grpc_app_tx.send(AppEvent::Coordinator(
-                    CoordinatorEvent::Disconnected(e.to_string()),
+                    CoordinatorEvent::Disconnected(format!("{e:#}")),
                 ));
             }
 

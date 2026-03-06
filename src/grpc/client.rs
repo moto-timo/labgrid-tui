@@ -39,11 +39,15 @@ impl CoordinatorClient {
     pub async fn run(&self, event_tx: mpsc::UnboundedSender<CoordinatorEvent>) -> Result<()> {
         info!(url = %self.url, "connecting to coordinator");
 
-        let channel = Channel::from_shared(self.url.clone())
+        let endpoint = Channel::from_shared(self.url.clone())
             .context("invalid coordinator URL")?
-            .connect()
-            .await
-            .context("failed to connect to coordinator")?;
+            .connect_timeout(std::time::Duration::from_secs(10))
+            .timeout(std::time::Duration::from_secs(30));
+
+        let channel = endpoint.connect().await.context(format!(
+            "failed to connect to coordinator at {}",
+            self.url
+        ))?;
 
         let mut client = TonicClient::new(channel);
 
